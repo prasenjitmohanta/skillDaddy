@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: skilldaddy-bot
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node tg-bot.js
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_ADMIN_ID
+        value: "1793240180"
+      - key: UPI_ID
+        value: "surajprasadsoren78@okaxis"
+      - key: DISCORD_INVITE_LINK
+        value: "https://discord.gg/xhWTS5csKZ"
+      - key: TELEGRAM_CHANNEL_LINK
+        value: "https://t.me/SkillDaddyOfficial"
