@@ -4,12 +4,14 @@
   "description": "SkillDaddy Discord Bot - Private Ticket & Verification System",
   "main": "bot.js",
   "scripts": {
-    "start": "node bot.js",
+    "start": "node tg-bot.js",
+    "tg": "node tg-bot.js",
     "bot": "node bot.js",
     "deploy": "node deploy-commands.js"
   },
   "dependencies": {
     "discord.js": "^14.16.3",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "telegraf": "^4.16.3"
   }
 }
