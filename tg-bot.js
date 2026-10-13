@@ -692,18 +692,37 @@ bot.action(/^admin_complete_(.+)$/, async (ctx) => {
   await syncCustomerQueueChannel();
 });
 
-// Launch Bot
-bot.launch({ dropPendingUpdates: true });
-console.log(`===============================================`);
-console.log(`👑 SkillDaddy Telegram Bot is LIVE & POLLING!`);
-console.log(`🤖 Handle: @SkillDaddyBot`);
-console.log(`🔗 Discord Link: ${config.discordLink}`);
-console.log(`===============================================`);
+// Process-level unhandled exception guard
+process.on('unhandledRejection', (reason) => {
+  console.error('[Unhandled Rejection]:', reason?.message || reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[Uncaught Exception]:', err.message);
+});
 
-// Initial queue sync if channel is already configured
-if (config.queueChannelId) {
-  syncCustomerQueueChannel();
+// Auto-reconnect launcher
+function launchBot() {
+  bot.launch({ dropPendingUpdates: true })
+    .then(() => {
+      console.log('[SkillDaddy Bot] Polling terminated cleanly.');
+    })
+    .catch((err) => {
+      console.error(`[Telegram Launch Error]: ${err.message}. Retrying in 5 seconds...`);
+      setTimeout(launchBot, 5000);
+    });
+
+  console.log(`===============================================`);
+  console.log(`👑 SkillDaddy Telegram Bot is LIVE & POLLING!`);
+  console.log(`🤖 Handle: @SkillDaddyBot`);
+  console.log(`🔗 Discord Link: ${config.discordLink}`);
+  console.log(`===============================================`);
+
+  if (config.queueChannelId) {
+    syncCustomerQueueChannel();
+  }
 }
+
+launchBot();
 
 // Graceful Stop
 process.once('SIGINT', () => bot.stop('SIGINT'));
