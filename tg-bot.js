@@ -97,8 +97,31 @@ function saveOrders() {
   }
 }
 
-// In-Memory user session wizard states
-const sessions = new Map(); // userId -> { step, plan, price, gmail, password }
+// Persistent Session Storage (Survives bot restarts)
+const SESSIONS_FILE = path.join(__dirname, 'sessions.json');
+let sessionsData = {};
+if (fs.existsSync(SESSIONS_FILE)) {
+  try {
+    sessionsData = JSON.parse(fs.readFileSync(SESSIONS_FILE, 'utf-8'));
+  } catch (e) {
+    sessionsData = {};
+  }
+}
+
+function getSession(userId) {
+  return sessionsData[String(userId)];
+}
+
+function setSession(userId, data) {
+  if (!data) {
+    delete sessionsData[String(userId)];
+  } else {
+    sessionsData[String(userId)] = data;
+  }
+  try {
+    fs.writeFileSync(SESSIONS_FILE, JSON.stringify(sessionsData, null, 2), 'utf-8');
+  } catch (e) {}
+}
 
 // Funny Codename Generator
 const ADJECTIVES = ['Shadow', 'Neon', 'Cyber', 'Mystic', 'Phantom', 'Cosmic', 'Turbo', 'Ninja', 'Stellar', 'Rogue', 'Savage', 'Blazing', 'Frosty', 'Thunder', 'Quantum', 'Pixel', 'Hyper', 'Stealth', 'Crimson', 'Venom', 'Glitch', 'Nova'];
@@ -320,7 +343,7 @@ bot.action(/^order_plan_(.+)$/, async (ctx) => {
   const planKey = ctx.match[1];
   const planInfo = PLANS[planKey] || PLANS['level_all'];
 
-  sessions.set(ctx.from.id, {
+  setSession(ctx.from.id, {
     step: 'awaiting_payment_confirm',
     plan: planInfo.name,
     price: planInfo.price
@@ -358,13 +381,13 @@ bot.action(/^order_plan_(.+)$/, async (ctx) => {
 
 bot.action('step_ask_id', async (ctx) => {
   await ctx.answerCbQuery();
-  const session = sessions.get(ctx.from.id);
+  let session = getSession(ctx.from.id);
   if (!session) {
-    return ctx.reply('⚠️ Session expired. Please start over by tapping below:', getMainMenuKeyboard());
+    session = { plan: 'Level 5: Accelerated', price: '₹500' };
   }
 
   session.step = 'awaiting_gmail';
-  sessions.set(ctx.from.id, session);
+  setSession(ctx.from.id, session);
 
   const text =
     `📧 <b>STEP 2/3: Account Login ID / Gmail</b>\n\n` +
@@ -380,7 +403,7 @@ bot.action('step_ask_id', async (ctx) => {
 
 bot.action('cancel_order', async (ctx) => {
   await ctx.answerCbQuery('Order cancelled');
-  sessions.delete(ctx.from.id);
+  setSession(ctx.from.id, null);
   await ctx.reply('❌ Draft cancelled. You can start over anytime ♡', getMainMenuKeyboard());
 });
 
@@ -396,7 +419,7 @@ bot.command('cancel', async (ctx) => {
     );
   }
 
-  sessions.delete(userId);
+  setSession(userId, null);
   await ctx.reply('❌ Current draft cancelled.', getMainMenuKeyboard());
 });
 
@@ -405,7 +428,7 @@ bot.command('cancel', async (ctx) => {
 // ----------------------------------------------------
 bot.on('text', async (ctx) => {
   const userId = ctx.from.id;
-  const session = sessions.get(userId);
+  let session = getSession(userId);
 
   // Admin Swipe-Reply to Customer
   if (isAdmin(ctx) && ctx.message.reply_to_message) {
@@ -431,7 +454,7 @@ bot.on('text', async (ctx) => {
     const input = ctx.message.text.trim();
     session.gmail = input;
     session.step = 'awaiting_password';
-    sessions.set(userId, session);
+    setSession(userId, session);
 
     return ctx.reply(
       `🔑 <b>STEP 3/3: Account Password</b>\n\n` +
@@ -449,7 +472,7 @@ bot.on('text', async (ctx) => {
   if (session && session.step === 'awaiting_password') {
     session.password = ctx.message.text.trim();
     session.step = 'awaiting_screenshot';
-    sessions.set(userId, session);
+    setSession(userId, session);
 
     return ctx.reply(
       `📸 <b>FINAL STEP: Payment Screenshot</b>\n\n` +
@@ -460,6 +483,55 @@ bot.on('text', async (ctx) => {
       {
         parse_mode: 'HTML',
         ...Markup.inlineKeyboard([[Markup.button.callback('❌ Cancel', 'cancel_order')]])
+      }
+    );
+  }
+
+  // Fallback: If user types text while in awaiting_screenshot
+  if (session && session.step === 'awaiting_screenshot') {
+    return ctx.reply(
+      `📸 <b>Payment Screenshot Needed:</b>\n\n` +
+      `Account ID: <code>${escapeHtml(session.gmail)}</code>\n\n` +
+      `👉 Please upload the <b>Screenshot image file</b> of your completed UPI payment directly!`,
+      Markup.inlineKeyboard([[Markup.button.callback('❌ Cancel', 'cancel_order')]])
+    );
+  }
+
+  // Fallback: If user typed an email directly without an active session
+  if (ctx.message.text.includes('@') && ctx.message.text.includes('.')) {
+    session = {
+      step: 'awaiting_password',
+      plan: 'Level 5: Accelerated',
+      price: '₹500',
+      gmail: ctx.message.text.trim()
+    };
+    setSession(userId, session);
+
+    return ctx.reply(
+      `🔑 <b>STEP 3/3: Account Password</b>\n\n` +
+      `Account ID: <code>${escapeHtml(session.gmail)}</code>\n` +
+      `Plan: <b>${escapeHtml(session.plan)} (${escapeHtml(session.price)})</b>\n\n` +
+      `Now, please send your <b>Account Password</b>:\n\n` +
+      `🔒 <i>Your password is kept 100% confidential and is only visible to the Admin.</i>`,
+      {
+        parse_mode: 'HTML',
+        ...Markup.inlineKeyboard([[Markup.button.callback('❌ Cancel', 'cancel_order')]])
+      }
+    );
+  }
+
+  // If Admin typed normal text (not a reply to a customer)
+  if (isAdmin(ctx)) {
+    return ctx.reply(
+      `👑 <b>Admin Notice:</b>\n` +
+      `To open a test order ticket, tap <b>Open Private Ticket & Order</b> below.\n` +
+      `To reply to a customer, swipe-reply to their alert message!`,
+      {
+        parse_mode: 'HTML',
+        ...Markup.inlineKeyboard([
+          [Markup.button.callback('👑 Open Private Ticket & Order', 'flow_start')],
+          [Markup.button.callback('⚙️ Admin Dashboard', 'admin_dashboard')]
+        ])
       }
     );
   }
@@ -490,7 +562,7 @@ bot.on('text', async (ctx) => {
 // ----------------------------------------------------
 bot.on('photo', async (ctx) => {
   const userId = ctx.from.id;
-  const session = sessions.get(userId);
+  const session = getSession(userId);
 
   // If customer is completing their order
   if (session && session.step === 'awaiting_screenshot') {
@@ -514,7 +586,7 @@ bot.on('photo', async (ctx) => {
 
     orders.push(newOrder);
     saveOrders();
-    sessions.delete(userId);
+    setSession(userId, null);
 
     // Confirmation message to user
     const userConfirm =
