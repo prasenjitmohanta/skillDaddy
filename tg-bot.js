@@ -280,6 +280,50 @@ function getChannelGuideKeyboard() {
   ]);
 }
 
+// Forwarded message from Channel Detector (Connect Private Channels in 1-Click)
+bot.use(async (ctx, next) => {
+  if (ctx.message && isAdmin(ctx)) {
+    const fwdChat = ctx.message.forward_from_chat || 
+                   (ctx.message.forward_origin?.type === 'channel' ? ctx.message.forward_origin.chat : null);
+
+    if (fwdChat) {
+      const channelId = fwdChat.id;
+      const channelTitle = fwdChat.title || 'Your Channel';
+      const channelUser = fwdChat.username ? `@${fwdChat.username}` : null;
+
+      try {
+        const sent = await bot.telegram.sendMessage(
+          channelId,
+          getChannelGuideText(),
+          { parse_mode: 'HTML', ...getChannelGuideKeyboard() }
+        );
+        bot.telegram.pinChatMessage(channelId, sent.message_id).catch(() => {});
+
+        config.queueChannelId = String(channelId);
+        if (channelUser) {
+          config.channelLink = `https://t.me/${fwdChat.username}`;
+        }
+        saveConfig();
+
+        return ctx.reply(
+          `🎉 <b>Channel Connected Successfully!</b>\n\n` +
+          `📢 <b>Channel:</b> ${escapeHtml(channelTitle)}\n` +
+          `🆔 <b>Channel ID:</b> <code>${channelId}</code>\n\n` +
+          `✅ <b>The Master Guide has been posted and pinned in your channel!</b>\n` +
+          `Open your channel now to view the instructions and buttons ♡`,
+          { parse_mode: 'HTML' }
+        );
+      } catch (err) {
+        return ctx.reply(
+          `❌ <b>Could not post to channel:</b> ${err.message}\n\n` +
+          `⚠️ Make sure @SkillDaddyBot is an <b>Administrator</b> in <b>${escapeHtml(channelTitle)}</b> with "Post Messages" and "Pin Messages" permissions enabled!`
+        );
+      }
+    }
+  }
+  return next();
+});
+
 // Post Official Master Guide to Channel & Pin It
 bot.command('postchannel', async (ctx) => {
   if (!isAdmin(ctx)) return;
@@ -292,15 +336,22 @@ bot.command('postchannel', async (ctx) => {
       targetChat = config.queueChannelId;
     } else {
       return ctx.reply(
-        '⚠️ <b>Usage:</b> <code>/postchannel @YourChannelHandle</code>\n' +
-        'Example: <code>/postchannel @SkillDaddyOfficial</code>\n\n' +
-        '📌 <b>Prerequisite:</b>\n' +
-        '1. Go to your Telegram Channel Settings → Administrators.\n' +
-        '2. Add <code>@SkillDaddyBot</code> as an Admin with "Post Messages" permission.\n' +
-        '3. Then run this command again!',
+        '⚠️ <b>How to connect your channel:</b>\n\n' +
+        '👉 <b>Option 1 (Easiest for Private Channels):</b>\n' +
+        'Just <b>Forward ANY message/post</b> from your channel into this chat! The bot will automatically detect your channel and post the instructions!\n\n' +
+        '👉 <b>Option 2:</b>\n' +
+        'Type <code>/postchannel</code> <b>directly inside your channel</b> as a new post!\n\n' +
+        '👉 <b>Option 3 (For Public Channels):</b>\n' +
+        '<code>/postchannel @YourChannelHandle</code>\n\n' +
+        '📌 <i>Remember: Ensure @SkillDaddyBot is added as an Admin in your channel first!</i>',
         { parse_mode: 'HTML' }
       );
     }
+  }
+
+  // If user passed a handle without '@', prepend it
+  if (targetChat && !targetChat.startsWith('@') && !targetChat.startsWith('-100')) {
+    targetChat = `@${targetChat}`;
   }
 
   try {
@@ -329,12 +380,13 @@ bot.command('postchannel', async (ctx) => {
   } catch (err) {
     await ctx.reply(
       `❌ <b>Could not post to channel:</b> ${err.message}\n\n` +
-      `⚠️ <b>How to fix:</b>\n` +
-      `1. Open your channel in Telegram.\n` +
-      `2. Click Channel Info → ⚙️ (Edit) → <b>Administrators</b> → <b>Add Administrator</b>.\n` +
-      `3. Search for <code>@SkillDaddyBot</code> and add it.\n` +
-      `4. Make sure <b>Post Messages</b> and <b>Pin Messages</b> are enabled.\n` +
-      `5. Run <code>/postchannel ${targetChat}</code> again!`
+      `💡 <b>Why this happens:</b>\n` +
+      `Your channel is currently set to <b>Private</b> (private channels do not have public @usernames).\n\n` +
+      `👉 <b>Instant Fix (Recommended):</b>\n` +
+      `Simply <b>Forward ANY message</b> from your channel into this chat! The bot will detect your channel ID and post immediately.\n\n` +
+      `👉 <b>Or:</b>\n` +
+      `Type <code>/postchannel</code> inside your channel as a new post!`,
+      { parse_mode: 'HTML' }
     );
   }
 });
