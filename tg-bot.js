@@ -25,12 +25,7 @@ const fs = require('fs');
 const path = require('path');
 const http = require('http');
 
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-if (!BOT_TOKEN) {
-  console.error('❌ TELEGRAM_BOT_TOKEN is missing in .env!');
-  process.exit(1);
-}
-
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8957249826:AAGJodfkk0uFMgn7A0NeftKBUYsqk5KgWas';
 const bot = new Telegraf(BOT_TOKEN);
 
 // QR Code Image Asset

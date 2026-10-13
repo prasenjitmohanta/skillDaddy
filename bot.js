@@ -5,6 +5,14 @@
  */
 
 require('dotenv').config();
+
+// If Discord Token is not set, automatically launch the Telegram Bot!
+if (!process.env.DISCORD_TOKEN) {
+  console.log('👑 [SkillDaddy] Launching Telegram Bot...');
+  require('./tg-bot.js');
+  return;
+}
+
 const http = require('http');
 const {
   Client,

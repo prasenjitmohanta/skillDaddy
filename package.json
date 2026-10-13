@@ -1,8 +1,8 @@
 {
-  "name": "skilldaddy-discord-bot",
+  "name": "skilldaddy-bot",
   "version": "1.0.0",
-  "description": "SkillDaddy Discord Bot - Private Ticket & Verification System",
-  "main": "bot.js",
+  "description": "SkillDaddy Telegram & Discord Bot System",
+  "main": "tg-bot.js",
   "scripts": {
     "start": "node tg-bot.js",
     "tg": "node tg-bot.js",
