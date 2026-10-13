@@ -238,6 +238,119 @@ bot.command('setupi', async (ctx) => {
   await ctx.reply(`✅ UPI ID updated successfully to: ${config.upiId}`);
 });
 
+// Channel Master Guide Generator
+function getChannelGuideText() {
+  return (
+    `👑 <b>SKILLDADDY ♡ YOUR PERSONAL SKILL HANDLER</b>\n\n` +
+    `<i>“same girl... smarter, richer, colder ♡”</i>\n` +
+    `<i>“Good Girls Learn Dirty Skills ✨”</i>\n\n` +
+    `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+    `👋 <b>WELCOME TO SKILLDADDY OFFICIAL!</b>\n` +
+    `We handle your skill tasks, course levels, and account milestones with 100% confidentiality, high quality, and 24-hour turnaround.\n\n` +
+    `📖 <b>AVAILABLE PLANS & PRICING:</b>\n` +
+    `🌱 <b>Level 1: Beginner</b> — ₹100 <i>(Let's get you started)</i>\n` +
+    `📖 <b>Level 2: Elementary</b> — ₹200 <i>(Build the basics)</i>\n` +
+    `📊 <b>Level 3: Intermediate</b> — ₹300 <i>(Get things serious)</i>\n` +
+    `🚀 <b>Level 4: Advance</b> — ₹400 <i>(Level up your game)</i>\n` +
+    `⚡ <b>Level 5: Accelerated</b> — ₹500 <i>(For the real ones)</i>\n` +
+    `👑 <b>ALL ACCESS (All 5 Levels)</b> — <s>₹1500</s> <b>₹600</b> 🔥 <i>(BEST DEAL)</i>\n\n` +
+    `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+    `📝 <b>WHAT TO DO & WHAT TO SEND:</b>\n\n` +
+    `1️⃣ <b>Join Our Official Discord:</b>\n` +
+    `   Click the button below or join: ${config.discordLink}\n\n` +
+    `2️⃣ <b>Open a Private 1-on-1 Ticket:</b>\n` +
+    `   Inside Discord, run <code>/yesDaddy</code> (or click the button). A private encrypted room is created that ONLY you and the Admin can see!\n\n` +
+    `3️⃣ <b>Send These 3 Things to the Admin:</b>\n` +
+    `   • <b>Username / Gmail:</b> Your account login ID\n` +
+    `   • <b>Password:</b> Your account password\n` +
+    `   • <b>Payment Screenshot:</b> Proof of payment (UPI: <code>${escapeHtml(config.upiId)}</code>)\n\n` +
+    `4️⃣ <b>Sit Back & Level Up:</b>\n` +
+    `   Our operators complete your task within 24 hours. Only the Admin can close your ticket once you are 100% satisfied!\n\n` +
+    `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+    `🔒 <b>100% SAFE & CONFIDENTIAL</b>\n` +
+    `👇 <b>Click below to get started now:</b>`
+  );
+}
+
+function getChannelGuideKeyboard() {
+  const discordUrl = config.discordLink || 'https://discord.gg/xhWTS5csKZ';
+  return Markup.inlineKeyboard([
+    [Markup.button.url('🎮 Join Discord & Open Ticket ♡', discordUrl)],
+    [Markup.button.url('🚀 Contact Bot (@SkillDaddyBot)', 'https://t.me/SkillDaddyBot')]
+  ]);
+}
+
+// Post Official Master Guide to Channel & Pin It
+bot.command('postchannel', async (ctx) => {
+  if (!isAdmin(ctx)) return;
+
+  const parts = ctx.message.text.trim().split(/\s+/);
+  let targetChat = parts[1];
+
+  if (!targetChat) {
+    if (config.queueChannelId) {
+      targetChat = config.queueChannelId;
+    } else {
+      return ctx.reply(
+        '⚠️ <b>Usage:</b> <code>/postchannel @YourChannelHandle</code>\n' +
+        'Example: <code>/postchannel @SkillDaddyOfficial</code>\n\n' +
+        '📌 <b>Prerequisite:</b>\n' +
+        '1. Go to your Telegram Channel Settings → Administrators.\n' +
+        '2. Add <code>@SkillDaddyBot</code> as an Admin with "Post Messages" permission.\n' +
+        '3. Then run this command again!',
+        { parse_mode: 'HTML' }
+      );
+    }
+  }
+
+  try {
+    const sent = await bot.telegram.sendMessage(
+      targetChat,
+      getChannelGuideText(),
+      { parse_mode: 'HTML', ...getChannelGuideKeyboard() }
+    );
+
+    // Pin the master guide in channel
+    bot.telegram.pinChatMessage(targetChat, sent.message_id).catch(() => {});
+
+    config.queueChannelId = String(targetChat);
+    if (targetChat.startsWith('@')) {
+      config.channelLink = `https://t.me/${targetChat.replace('@', '')}`;
+    }
+    saveConfig();
+
+    await ctx.reply(
+      `✅ <b>Master Instructions Posted & Pinned Successfully!</b>\n\n` +
+      `📢 <b>Channel:</b> ${escapeHtml(targetChat)}\n` +
+      `🔗 <b>Channel Link:</b> ${config.channelLink}\n\n` +
+      `You can now give your channel link to anyone and they will immediately see the complete instructions!`,
+      { parse_mode: 'HTML' }
+    );
+  } catch (err) {
+    await ctx.reply(
+      `❌ <b>Could not post to channel:</b> ${err.message}\n\n` +
+      `⚠️ <b>How to fix:</b>\n` +
+      `1. Open your channel in Telegram.\n` +
+      `2. Click Channel Info → ⚙️ (Edit) → <b>Administrators</b> → <b>Add Administrator</b>.\n` +
+      `3. Search for <code>@SkillDaddyBot</code> and add it.\n` +
+      `4. Make sure <b>Post Messages</b> and <b>Pin Messages</b> are enabled.\n` +
+      `5. Run <code>/postchannel ${targetChat}</code> again!`
+    );
+  }
+});
+
+// Update Official Channel Link
+bot.command('setchannel', async (ctx) => {
+  if (!isAdmin(ctx)) return;
+  const parts = ctx.message.text.trim().split(/\s+/);
+  if (parts.length < 2) {
+    return ctx.reply('⚠️ Usage: /setchannel https://t.me/YourChannelHandle');
+  }
+  config.channelLink = parts[1].trim();
+  saveConfig();
+  await ctx.reply(`✅ Official Channel link updated to: ${config.channelLink}`);
+});
+
 // Bind Customer Showcase / Queue Channel
 bot.command('setqueue', async (ctx) => {
   if (!isAdmin(ctx)) {
@@ -263,12 +376,14 @@ bot.command('help', async (ctx) => {
   if (isAdmin(ctx)) {
     return ctx.reply(
       `👑 <b>SkillDaddy Admin Commands:</b>\n\n` +
-      `• <code>/setdiscord &lt;url&gt;</code> — Set Discord Invite Link\n` +
+      `• <code>/postchannel @Channel</code> — Post & pin master instructions to your channel\n` +
+      `• <code>/setchannel &lt;url&gt;</code> — Set official channel link\n` +
+      `• <code>/setdiscord &lt;url&gt;</code> — Set Discord invite link\n` +
       `• <code>/setupi &lt;id&gt;</code> — Update UPI ID\n` +
       `• <code>/setadmin</code> — Bind this chat as Admin Vault\n` +
-      `• <code>/setqueue</code> — Bind customer live queue channel\n` +
-      `• <code>/syncqueue</code> — Force sync queue message\n` +
-      `• <i>Swipe-reply to any customer alert message to reply directly!</i>`,
+      `• <code>/setqueue</code> — Bind live queue channel\n` +
+      `• <code>/syncqueue</code> — Force sync queue message\n\n` +
+      `<i>💡 Swipe-reply to any customer alert message to reply directly!</i>`,
       { parse_mode: 'HTML' }
     );
   }
@@ -277,6 +392,25 @@ bot.command('help', async (ctx) => {
     parse_mode: 'HTML',
     ...getDiscordRedirectKeyboard()
   });
+});
+
+// Channel Post Listener (If admin triggers /postchannel directly inside channel)
+bot.on('channel_post', async (ctx) => {
+  const text = ctx.channelPost.text || '';
+  if (text.startsWith('/postchannel') || text.startsWith('/postguide') || text.startsWith('/setup')) {
+    try {
+      const sent = await ctx.reply(getChannelGuideText(), {
+        parse_mode: 'HTML',
+        ...getChannelGuideKeyboard()
+      });
+      ctx.pinChatMessage(sent.message_id).catch(() => {});
+      ctx.deleteMessage().catch(() => {});
+      config.queueChannelId = String(ctx.chat.id);
+      saveConfig();
+    } catch (e) {
+      console.warn('Channel post error:', e.message);
+    }
+  }
 });
 
 // ----------------------------------------------------
