@@ -152,14 +152,18 @@ process.on('uncaughtException', (err) => {
 });
 
 // Main Customer Menu
-function getMainMenuKeyboard() {
-  return Markup.inlineKeyboard([
+function getMainMenuKeyboard(isAdminUser = false) {
+  const buttons = [
     [Markup.button.callback('👑 Open Private Ticket & Order', 'flow_start')],
     [Markup.button.callback('💳 Pricing & QR Code', 'menu_pricing')],
     [Markup.button.callback('🔍 Check My Orders / Status', 'menu_status')],
     [Markup.button.callback('💬 Direct Message Admin', 'menu_chat_admin')],
     [Markup.button.url('📢 Official Telegram Channel', config.channelLink)]
-  ]);
+  ];
+  if (isAdminUser) {
+    buttons.push([Markup.button.callback('⚙️ Admin Dashboard & Tools', 'admin_dashboard')]);
+  }
+  return Markup.inlineKeyboard(buttons);
 }
 
 // Plan Selection Keyboard
@@ -180,31 +184,8 @@ function getPlanKeyboard() {
 // ----------------------------------------------------
 bot.command(['start', 'ticket', 'yesdaddy'], async (ctx) => {
   const name = ctx.from.first_name || 'Gorgeous';
+  const isUserAdmin = isAdmin(ctx);
 
-  // Admin View
-  if (isAdmin(ctx)) {
-    const adminWelcome =
-      `👑 <b>SKILLDADDY ADMIN VAULT</b> ♡\n\n` +
-      `Welcome Admin! Your system is active and ready.\n` +
-      `📲 <b>Active UPI ID:</b> <code>${escapeHtml(config.upiId)}</code> (${escapeHtml(config.payeeName)})\n` +
-      `🆔 <b>Admin Vault Chat ID:</b> <code>${escapeHtml(config.adminChatId)}</code>\n` +
-      `📢 <b>Queue Channel:</b> <code>${escapeHtml(config.queueChannelId || 'Not connected')}</code>\n\n` +
-      `🛠️ <b>Admin Commands:</b>\n` +
-      `• <code>/setupi &lt;id&gt;</code> — Change UPI ID\n` +
-      `• <code>/setadmin</code> — Bind this chat as Admin Vault\n` +
-      `• <code>/postchannel @Channel</code> — Post & pin guide to channel\n` +
-      `• <code>/syncqueue</code> — Force sync queue message\n\n` +
-      `<i>💡 When a customer places an order or sends a message, you will receive full details here with 1-click action buttons and swipe-reply messaging!</i>`;
-
-    const adminKeyboard = Markup.inlineKeyboard([
-      [Markup.button.callback('👁️ Demo Customer View', 'demo_customer_view')],
-      [Markup.button.callback('💳 View Payment QR', 'menu_pricing')]
-    ]);
-
-    return ctx.reply(adminWelcome, { parse_mode: 'HTML', ...adminKeyboard });
-  }
-
-  // Customer View
   const welcomeText =
     `👑 <b>SKILLDADDY ♡ YOUR PERSONAL SKILL HANDLER</b>\n\n` +
     `<i>“same girl... smarter, richer, colder ♡”</i>\n` +
@@ -218,14 +199,49 @@ bot.command(['start', 'ticket', 'yesdaddy'], async (ctx) => {
     `4️⃣ Work completed within 24 hours!\n\n` +
     `👇 <b>Tap below to begin your private ticket:</b>`;
 
-  await ctx.reply(welcomeText, { parse_mode: 'HTML', ...getMainMenuKeyboard() });
+  await ctx.reply(welcomeText, { parse_mode: 'HTML', ...getMainMenuKeyboard(isUserAdmin) });
+});
+
+// Admin Dashboard Action & /admin Command
+function sendAdminDashboard(ctx) {
+  const adminWelcome =
+    `👑 <b>SKILLDADDY ADMIN VAULT</b> ♡\n\n` +
+    `Welcome Admin! Your system is active and ready.\n` +
+    `📲 <b>Active UPI ID:</b> <code>${escapeHtml(config.upiId)}</code> (${escapeHtml(config.payeeName)})\n` +
+    `🆔 <b>Admin Vault Chat ID:</b> <code>${escapeHtml(config.adminChatId)}</code>\n` +
+    `📢 <b>Queue Channel:</b> <code>${escapeHtml(config.queueChannelId || 'Not connected')}</code>\n\n` +
+    `🛠️ <b>Admin Commands:</b>\n` +
+    `• <code>/setupi &lt;id&gt;</code> — Change UPI ID\n` +
+    `• <code>/setadmin</code> — Bind this chat as Admin Vault\n` +
+    `• <code>/postchannel @Channel</code> — Post & pin guide to channel\n` +
+    `• <code>/syncqueue</code> — Force sync queue message\n\n` +
+    `<i>💡 When a customer places an order or sends a message, you will receive full details here with 1-click action buttons and swipe-reply messaging!</i>`;
+
+  const adminKeyboard = Markup.inlineKeyboard([
+    [Markup.button.callback('👑 Customer Order Menu', 'menu_main')],
+    [Markup.button.callback('💳 View Payment QR', 'menu_pricing')]
+  ]);
+
+  return ctx.reply(adminWelcome, { parse_mode: 'HTML', ...adminKeyboard });
+}
+
+bot.command('admin', async (ctx) => {
+  if (isAdmin(ctx)) {
+    return sendAdminDashboard(ctx);
+  }
+  return ctx.reply('❌ Admin access only.');
+});
+
+bot.action('admin_dashboard', async (ctx) => {
+  await ctx.answerCbQuery();
+  return sendAdminDashboard(ctx);
 });
 
 bot.action('demo_customer_view', async (ctx) => {
   await ctx.answerCbQuery();
   await ctx.reply(
     `👑 <b>Customer Menu Preview:</b>`,
-    { parse_mode: 'HTML', ...getMainMenuKeyboard() }
+    { parse_mode: 'HTML', ...getMainMenuKeyboard(true) }
   );
 });
 
