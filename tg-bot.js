@@ -5,7 +5,7 @@
  * Flow:
  * 1. Customer runs /start, /ticket, or /yesdaddy -> Branded Welcome Menu.
  * 2. Start Order / Open Private Ticket:
- *    - Step 1: Select Plan (Beginner to All Access ₹600)
+ *    - Step 1: Select Plan (Beginner to All Access ₹1500)
  *    - Step 2: Display QR Code Photo & UPI (surajprasadsoren78@okaxis)
  *    - Step 3: Input Account Username / Gmail
  *    - Step 4: Input Account Password (Confidential)
@@ -61,16 +61,19 @@ function saveConfig() {
 // Lightweight Health-Check HTTP Server
 const PORT = process.env.PORT || 3000;
 const server = http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+  res.writeHead(200, {
+    'Content-Type': 'text/plain; charset=utf-8',
+    'Connection': 'keep-alive'
+  });
   res.end('👑 SkillDaddy Telegram Bot is Running! ♡');
 });
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
-    server.listen(0);
+    server.listen(0, '0.0.0.0');
   }
 });
-server.listen(PORT, () => {
-  console.log(`[Health Server] Listening on port ${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`[Health Server] Listening on port ${PORT} (0.0.0.0)`);
 });
 
 // Orders Storage
@@ -153,7 +156,7 @@ const PLANS = {
   'level3': { name: 'Level 3: Intermediate', price: '₹300', desc: 'Get things serious 📊' },
   'level4': { name: 'Level 4: Advance', price: '₹400', desc: 'Level up your game 🚀' },
   'level5': { name: 'Level 5: Accelerated', price: '₹500', desc: 'For the real ones ⚡' },
-  'level_all': { name: '👑 ALL ACCESS (All 5 Levels)', price: '₹600', desc: 'Best deal — All 5 Levels at once (Save ₹900) 🔥' }
+  'level_all': { name: '👑 ALL ACCESS (All 5 Levels)', price: '₹1500', desc: 'All 5 Levels combined (100+200+300+400+500 = ₹1500) 👑' }
 };
 
 // Global error handler
@@ -192,7 +195,7 @@ function getPlanKeyboard() {
     [Markup.button.callback('📊 Level 3: Intermediate (₹300)', 'order_plan_level3')],
     [Markup.button.callback('🚀 Level 4: Advance (₹400)', 'order_plan_level4')],
     [Markup.button.callback('⚡ Level 5: Accelerated (₹500)', 'order_plan_level5')],
-    [Markup.button.callback('👑 ALL ACCESS — All 5 Levels (₹600) 🔥', 'order_plan_level_all')],
+    [Markup.button.callback('👑 ALL ACCESS — All 5 Levels (₹1500)', 'order_plan_level_all')],
     [Markup.button.callback('❌ Cancel', 'cancel_order')]
   ]);
 }
@@ -274,7 +277,7 @@ async function sendPricingAndQr(ctx, isEdit = false) {
     `📊 <b>Level 3: Intermediate</b> — ₹300\n` +
     `🚀 <b>Level 4: Advance</b> — ₹400\n` +
     `⚡ <b>Level 5: Accelerated</b> — ₹500\n` +
-    `👑 <b>ALL ACCESS (All 5 Levels)</b> — <s>₹1500</s> <b>₹600</b> 🔥 <i>(BEST VALUE)</i>\n\n` +
+    `👑 <b>ALL ACCESS (All 5 Levels)</b> — <b>₹1500</b> 👑 <i>(100 + 200 + 300 + 400 + 500)</i>\n\n` +
     `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
     `📲 <b>UPI ID:</b> <code>${escapeHtml(config.upiId)}</code>\n` +
     `👤 <b>Name:</b> ${escapeHtml(config.payeeName)}\n` +
@@ -800,7 +803,7 @@ function getChannelGuideText() {
     `📊 <b>Level 3: Intermediate</b> — ₹300\n` +
     `🚀 <b>Level 4: Advance</b> — ₹400\n` +
     `⚡ <b>Level 5: Accelerated</b> — ₹500\n` +
-    `👑 <b>ALL ACCESS (All 5 Levels)</b> — <s>₹1500</s> <b>₹600</b> 🔥 <i>(BEST DEAL)</i>\n\n` +
+    `👑 <b>ALL ACCESS (All 5 Levels)</b> — <b>₹1500</b> 👑 <i>(All 5 Levels: 100 + 200 + 300 + 400 + 500)</i>\n\n` +
     `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
     `📝 <b>HOW TO ORDER:</b>\n\n` +
     `1️⃣ Click <b>Start Order / Open Ticket</b> below to message @SkillDaddyBot.\n` +

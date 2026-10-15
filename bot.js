@@ -248,7 +248,7 @@ async function createTicketChannel(guild, user) {
       `> • Level 3: Intermediate (₹300)\n` +
       `> • Level 4: Advance (₹400)\n` +
       `> • Level 5: Accelerated (₹500)\n` +
-      `> • 👑 **All Access (All 5 Levels): ₹600**\n\n` +
+      `> • 👑 **All Access (All 5 Levels): ₹1500**\n\n` +
       `📸 **4. Payment Proof / Screenshot** (Drop image directly in this chat)\n\n` +
       `━━━━━━━━━━━━━━━━━━━━━━━━\n` +
       `🔒 **Privacy:** Only you and the Admin can view this channel.\n` +
@@ -455,9 +455,10 @@ client.on('interactionCreate', async (interaction) => {
           `📊 **3. Intermediate** — ₹300 *(Get things serious)*\n` +
           `🚀 **4. Advance** — ₹400 *(Level up your game)*\n` +
           `⚡ **5. Accelerated** — ₹500 *(For the real ones)*\n\n` +
-          `👑 **ALL ACCESS (All 5 Levels at Once)** — ~~₹1500~~ **₹600** 🔥 *(BEST DEAL)*\n\n` +
+          `👑 **ALL ACCESS (All 5 Levels at Once)** — **₹1500** 👑 *(100+200+300+400+500)*\n\n` +
           `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-          `📲 **UPI ID:** \`extreme4hollywood@gmail.com\` *(or scan QR below)*\n` +
+          `📲 **UPI ID:** \`surajprasadsoren78@okaxis\` *(or scan QR below)*\n` +
+          `👤 **Payee Name:** Suraj Prasad Soren\n` +
           `📸 **Next Step:** Run **\`/yesDaddy\`** to create your private room and drop your screenshot!\n` +
           `━━━━━━━━━━━━━━━━━━━━━━━━━━`
         )
@@ -543,10 +544,10 @@ client.on('interactionCreate', async (interaction) => {
             `📊 **Level 3: Intermediate** — ₹300\n*Get things serious*\n\n` +
             `🚀 **Level 4: Advance** — ₹400\n*Level up your game*\n\n` +
             `⚡ **Level 5: Accelerated** — ₹500\n*For the real ones*\n\n` +
-            `👑 **ALL ACCESS (All 5 Levels at Once)** — ~~₹1500~~ **₹600** *(BEST DEAL)*\n\n` +
+            `👑 **ALL ACCESS (All 5 Levels at Once)** — **₹1500** 👑 *(100+200+300+400+500)*\n\n` +
             `━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-            `**Payment:** Scan the QR code or send payment, then upload screenshot right here in this room!\n` +
-            `*Contact Email:* \`extreme4hollywood@gmail.com\``
+            `📲 **UPI ID:** \`surajprasadsoren78@okaxis\` (Suraj Prasad Soren)\n` +
+            `📸 **Payment:** Scan the QR code or send UPI, then upload screenshot right here in this room!`
           );
 
         return interaction.reply({ embeds: [planEmbed], ephemeral: true });
@@ -633,9 +634,10 @@ client.on('messageCreate', async (message) => {
         `📊 **3. Intermediate** — ₹300 *(Get things serious)*\n` +
         `🚀 **4. Advance** — ₹400 *(Level up your game)*\n` +
         `⚡ **5. Accelerated** — ₹500 *(For the real ones)*\n\n` +
-        `👑 **ALL ACCESS (All 5 Levels at Once)** — ~~₹1500~~ **₹600** 🔥 *(BEST DEAL)*\n\n` +
+        `👑 **ALL ACCESS (All 5 Levels at Once)** — **₹1500** 👑 *(100+200+300+400+500)*\n\n` +
         `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-        `📲 **UPI ID:** \`extreme4hollywood@gmail.com\` / \`skilldaddy@upi\`\n` +
+        `📲 **UPI ID:** \`surajprasadsoren78@okaxis\`\n` +
+        `👤 **Payee Name:** Suraj Prasad Soren\n` +
         `📸 **Next Step:** Run **\`!yesDaddy\`** to create your private room and drop your screenshot!\n` +
         `━━━━━━━━━━━━━━━━━━━━━━━━━━`
       )
