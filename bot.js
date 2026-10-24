@@ -13,6 +13,8 @@ if (!process.env.DISCORD_TOKEN) {
   return;
 }
 
+const fs = require('fs');
+const path = require('path');
 const http = require('http');
 const {
   Client,
@@ -25,9 +27,12 @@ const {
   ButtonBuilder,
   ButtonStyle,
   EmbedBuilder,
+  AttachmentBuilder,
   PermissionFlagsBits,
   ChannelType
 } = require('discord.js');
+
+const QR_PATH = path.join(__dirname, 'assets', 'qr_code.jpg');
 
 // Lightweight Health-Check Web Server (Required for free cloud hosts like Render & Koyeb)
 const PORT = process.env.PORT || 3000;
@@ -257,6 +262,12 @@ async function createTicketChannel(guild, user) {
     .setFooter({ text: 'SkillDaddy ♡ Your Personal Skill Handler • Same Girl... Different Level' })
     .setTimestamp();
 
+  const files = [];
+  if (fs.existsSync(QR_PATH)) {
+    files.push(new AttachmentBuilder(QR_PATH, { name: 'qr_code.jpg' }));
+    welcomeEmbed.setImage('attachment://qr_code.jpg');
+  }
+
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId('close_ticket')
@@ -274,6 +285,7 @@ async function createTicketChannel(guild, user) {
   await ticketChannel.send({
     content: `🔔 <@${user.id}> & ${adminPing} — A new private ticket has been initiated!`,
     embeds: [welcomeEmbed],
+    files,
     components: [row]
   });
 
@@ -444,6 +456,7 @@ client.on('interactionCreate', async (interaction) => {
       }
 
       const qrAttachment = interaction.options.getAttachment('qr_code');
+      const files = [];
 
       const paymentEmbed = new EmbedBuilder()
         .setColor(PINK_COLOR)
@@ -466,6 +479,9 @@ client.on('interactionCreate', async (interaction) => {
 
       if (qrAttachment) {
         paymentEmbed.setImage(qrAttachment.url);
+      } else if (fs.existsSync(QR_PATH)) {
+        files.push(new AttachmentBuilder(QR_PATH, { name: 'qr_code.jpg' }));
+        paymentEmbed.setImage('attachment://qr_code.jpg');
       }
 
       const row = new ActionRowBuilder().addComponents(
@@ -476,7 +492,7 @@ client.on('interactionCreate', async (interaction) => {
           .setEmoji('👑')
       );
 
-      await interaction.channel.send({ embeds: [paymentEmbed], components: [row] });
+      await interaction.channel.send({ embeds: [paymentEmbed], files, components: [row] });
       return interaction.reply({ content: '✅ Payment guide posted!', ephemeral: true });
     }
 
@@ -550,7 +566,13 @@ client.on('interactionCreate', async (interaction) => {
             `📸 **Payment:** Scan the QR code or send UPI, then upload screenshot right here in this room!`
           );
 
-        return interaction.reply({ embeds: [planEmbed], ephemeral: true });
+        const files = [];
+        if (fs.existsSync(QR_PATH)) {
+          files.push(new AttachmentBuilder(QR_PATH, { name: 'qr_code.jpg' }));
+          planEmbed.setImage('attachment://qr_code.jpg');
+        }
+
+        return interaction.reply({ embeds: [planEmbed], files, ephemeral: true });
       }
     }
   } catch (error) {
@@ -643,6 +665,12 @@ client.on('messageCreate', async (message) => {
       )
       .setFooter({ text: 'SkillDaddy ♡ Complete Your Goal in 1 Day • 100% Safe & Confidential' });
 
+    const files = [];
+    if (fs.existsSync(QR_PATH)) {
+      files.push(new AttachmentBuilder(QR_PATH, { name: 'qr_code.jpg' }));
+      paymentEmbed.setImage('attachment://qr_code.jpg');
+    }
+
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId('btn_open_ticket')
@@ -651,7 +679,7 @@ client.on('messageCreate', async (message) => {
         .setEmoji('👑')
     );
 
-    await message.channel.send({ embeds: [paymentEmbed], components: [row] });
+    await message.channel.send({ embeds: [paymentEmbed], files, components: [row] });
     message.delete().catch(() => {});
   }
 });
